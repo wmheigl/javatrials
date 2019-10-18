@@ -2,7 +2,7 @@
  * Rotations.java
  *
  * @author Werner M. Heigl
- * @version 2019.10.08
+ * @version 2019.10.18
  */
 package CommonsMath;
 
@@ -91,37 +91,20 @@ public class Rotations {
     System.out.println("R'.M'.R'   = " + rp.multiply(m.multiply(rp)));
     System.out.println();
 
-    double azimuth = Math.toRadians(60);
-    double inclination = Math.toRadians(30);
-
     /*
      * Rotating vectors.
      * 
      */
-    Vector3D first = new Vector3D(0, 0, 0);
-    Vector3D last1 = new Vector3D(0, 0, 1);
-    Vector3D line1 = last1.subtract(first);
-    Vector3D last2 = new Vector3D(1, 0, 0);
-    Vector3D line2 = last2.subtract(first);
+    Vector3D first = new Vector3D(0, 0, -1);
 
-    Rotation r_inc_j = new Rotation(Vector3D.PLUS_J, inclination, convention);
-    Rotation r_azi_k = new Rotation(Vector3D.PLUS_K, azimuth, convention);
+    Rotation r_inc_j = new Rotation(Vector3D.PLUS_J, Math.toRadians(-30), convention);
+    Rotation r_azi_k = new Rotation(Vector3D.PLUS_K, Math.toRadians(-90), convention);
 
-    Vector3D result_inc = r_inc_j.applyTo(line1);
-    System.out.println("rotate " + line1 + " around j-axis: " + result_inc);
+    Vector3D result_inc = r_azi_k.applyTo(r_inc_j.applyTo(first));
+    
+    System.out.println("incline " + first + " around j-axis: " + r_inc_j.applyTo(first));
+    System.out.println("rotate inclined " + r_inc_j.applyTo(first) + " around k-axis: " + result_inc);
 
-    Vector3D result_azi = r_azi_k.applyTo(line2);
-    System.out.println("rotate " + line2 + " around k-axis: " + result_azi);
-
-    Vector3D result_inc_azi = r_azi_k.compose(r_inc_j, convention).applyTo(line1);
-    System.out.println("rotate " + line1 + " around j-axis and then k-axis: " + result_inc_azi);
-    System.out.println("check: " + r_azi_k.applyTo(result_inc));
-
-    Vector3D result_azi_inc = r_inc_j.compose(r_azi_k, convention).applyTo(line1);
-    System.out.println("rotate " + line1 + " around k-axis and then j-axis: " + result_azi_inc);
-
-    System.out.println("azimuth: " + Math.toDegrees(result_inc_azi.getAlpha()));
-    System.out.println("inclination: " + (90 - Math.toDegrees(result_inc_azi.getDelta())));
 
   }
 
