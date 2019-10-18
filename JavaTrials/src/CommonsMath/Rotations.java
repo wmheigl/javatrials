@@ -30,7 +30,7 @@ public class Rotations {
      * origin.
      */
     assert Vector3D.PLUS_J.equals(
-        new Rotation(Vector3D.PLUS_K, Math.toRadians(-90), RotationConvention.VECTOR_OPERATOR)
+        new Rotation(Vector3D.PLUS_K, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR)
             .applyTo(Vector3D.PLUS_I));
     assert Vector3D.PLUS_K.equals(
         new Rotation(Vector3D.PLUS_I, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR)
