@@ -15,8 +15,8 @@ import org.apache.commons.math3.linear.RealMatrix;
 /**
  * Class illustrating rotation of vectors with Commons Math Geometry package.
  * <p>
- * Its purpose was to understand how to rotate a vertical receiver array into a deviated well given
- * well azimuth and inclination.
+ * Its purpose was to understand how to rotate a vertical receiver array into a deviated well given well azimuth and
+ * inclination.
  *
  */
 public class Rotations {
@@ -26,18 +26,14 @@ public class Rotations {
   public static void main(String[] args) {
 
     /*
-     * Verify that rotations are counter-clockwise when looking along the rotation axis towards the
-     * origin.
+     * Verify that rotations are counter-clockwise when looking along the rotation axis towards the origin.
      */
-    assert Vector3D.PLUS_J.equals(
-        new Rotation(Vector3D.PLUS_K, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR)
-            .applyTo(Vector3D.PLUS_I));
-    assert Vector3D.PLUS_K.equals(
-        new Rotation(Vector3D.PLUS_I, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR)
-            .applyTo(Vector3D.PLUS_J));
-    assert Vector3D.PLUS_I.equals(
-        new Rotation(Vector3D.PLUS_J, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR)
-            .applyTo(Vector3D.PLUS_K));
+    assert Vector3D.distance(Vector3D.PLUS_J,
+	new Rotation(Vector3D.PLUS_K, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR).applyTo(Vector3D.PLUS_I)) < 1e-12;
+    assert Vector3D.distance(Vector3D.PLUS_K,
+	new Rotation(Vector3D.PLUS_I, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR).applyTo(Vector3D.PLUS_J)) < 1e-12;
+    assert Vector3D.distance(Vector3D.PLUS_I,
+	new Rotation(Vector3D.PLUS_J, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR).applyTo(Vector3D.PLUS_K)) < 1e-12;
 
     // @formatter:off
     /*
@@ -85,11 +81,9 @@ public class Rotations {
      */
     // @formatter:on
     RealMatrix r2 = new Array2DRowRealMatrix(
-        new Rotation(Vector3D.PLUS_K, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR)
-            .getMatrix());
-    RealMatrix rp = new Array2DRowRealMatrix(new Rotation(r1.getData(), 1e-12)
-        .compose(new Rotation(r2.getData(), 1e-12), RotationConvention.VECTOR_OPERATOR)
-        .getMatrix());
+	new Rotation(Vector3D.PLUS_K, Math.toRadians(90), RotationConvention.VECTOR_OPERATOR).getMatrix());
+    RealMatrix rp = new Array2DRowRealMatrix(
+	new Rotation(r1.getData(), 1e-12).compose(new Rotation(r2.getData(), 1e-12), RotationConvention.VECTOR_OPERATOR).getMatrix());
     System.out.println("Rotation from (N,E,Down) to (E,N,Up):");
     System.out.println("R\u2218R' = " + rp);
     System.out.println("R\u2218R'^T = " + rp.transpose());
