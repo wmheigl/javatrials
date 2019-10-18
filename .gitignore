@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # Compiled class file
 *.class
 
@@ -26,4 +24,4 @@ hs_err_pid*
 
 # files that differ from machine to machine
 .classpath
->>>>>>> branch 'master' of https://github.com/wmheigl/javatrials.git
+
