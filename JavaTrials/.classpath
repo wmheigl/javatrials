@@ -4,5 +4,9 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="/home/products/commons-math3-3.6.1/commons-math3-3.6.1.jar"/>
 	<classpathentry kind="lib" path="/home/products/jtk-master/core/build/libs/edu-mines-jtk-1.0.0.jar"/>
+	<classpathentry kind="lib" path="/home/products/jogamp/jar/jocl-natives-linux-amd64.jar"/>
+	<classpathentry kind="lib" path="/home/products/jogamp/jar/jocl.jar"/>
+	<classpathentry kind="lib" path="/home/products/jogamp/jar/gluegen-rt-natives-linux-amd64.jar"/>
+	<classpathentry kind="lib" path="/home/products/jogamp/jar/gluegen-rt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
