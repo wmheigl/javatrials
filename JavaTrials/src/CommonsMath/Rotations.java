@@ -95,16 +95,23 @@ public class Rotations {
      * Rotating vectors.
      * 
      */
-    Vector3D first = new Vector3D(0, 0, -1);
+    Vector3D vec = new Vector3D(0, 0, -1);
 
     Rotation r_inc_j = new Rotation(Vector3D.PLUS_J, Math.toRadians(-30), convention);
     Rotation r_azi_k = new Rotation(Vector3D.PLUS_K, Math.toRadians(-90), convention);
 
-    Vector3D result_inc = r_azi_k.applyTo(r_inc_j.applyTo(first));
+    Vector3D result_inc = r_azi_k.applyTo(r_inc_j.applyTo(vec));
     
-    System.out.println("incline " + first + " around j-axis: " + r_inc_j.applyTo(first));
-    System.out.println("rotate inclined " + r_inc_j.applyTo(first) + " around k-axis: " + result_inc);
+    System.out.println("incline " + vec + " around j-axis: " + r_inc_j.applyTo(vec));
+    System.out.println("rotate inclined " + r_inc_j.applyTo(vec) + " around k-axis: " + result_inc);
 
+    // the following rotates a vertical vector into a deviated wellbore
+    vec = new Vector3D(0,0,1);
+     r_inc_j = new Rotation(Vector3D.PLUS_J, Math.toRadians(30), convention);
+     r_azi_k = new Rotation(Vector3D.PLUS_K, Math.toRadians(-90), convention);
+
+     System.out.println("incline " + vec + " around j-axis: " + r_inc_j.applyTo(vec));
+     System.out.println("rotate inclined " + r_inc_j.applyTo(vec) + " around k-axis: " + result_inc);
 
   }
 
