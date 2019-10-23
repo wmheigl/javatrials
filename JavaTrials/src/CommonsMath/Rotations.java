@@ -119,7 +119,14 @@ public class Rotations {
     vec = new Vector3D(1, 1, 0);
     Rotation r = new Rotation(Vector3D.PLUS_K, Math.toRadians(90), RotationConvention.FRAME_TRANSFORM);
     System.out.println(vec + " after rotation : " + r.applyTo(vec));
-    double distance = Vector3D.distance(new Vector3D(1,-1,0), r.applyTo(vec));
+    double distance = Vector3D.distance(new Vector3D(1, -1, 0), r.applyTo(vec));
+    assert distance < 1e-15 : "Distance = " + distance;
+
+    // rotate a (S,E,Up) system into (N,E,Down)
+    vec = new Vector3D(1, 1, 1);
+    r = new Rotation(Vector3D.PLUS_J, Math.PI, RotationConvention.FRAME_TRANSFORM);
+    System.out.println(vec + " after rotation : " + r.applyTo(vec));
+    distance = Vector3D.distance(new Vector3D(-1, 1, -1), r.applyTo(vec));
     assert distance < 1e-15 : "Distance = " + distance;
 
   }
