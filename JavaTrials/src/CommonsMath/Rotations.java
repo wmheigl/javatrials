@@ -2,7 +2,7 @@
  * Rotations.java
  *
  * @author Werner M. Heigl
- * @version 2019.10.18
+ * @version 2019.10.23
  */
 package CommonsMath;
 
@@ -101,17 +101,26 @@ public class Rotations {
     Rotation r_azi_k = new Rotation(Vector3D.PLUS_K, Math.toRadians(-90), convention);
 
     Vector3D result_inc = r_azi_k.applyTo(r_inc_j.applyTo(vec));
-    
+
     System.out.println("incline " + vec + " around j-axis: " + r_inc_j.applyTo(vec));
     System.out.println("rotate inclined " + r_inc_j.applyTo(vec) + " around k-axis: " + result_inc);
 
     // the following rotates a vertical vector into a deviated wellbore
-    vec = new Vector3D(0,0,1);
-     r_inc_j = new Rotation(Vector3D.PLUS_J, Math.toRadians(30), convention);
-     r_azi_k = new Rotation(Vector3D.PLUS_K, Math.toRadians(-90), convention);
+    vec = new Vector3D(0, 0, 1);
+    r_inc_j = new Rotation(Vector3D.PLUS_J, Math.toRadians(30), convention);
+    r_azi_k = new Rotation(Vector3D.PLUS_K, Math.toRadians(-90), convention);
 
-     System.out.println("incline " + vec + " around j-axis: " + r_inc_j.applyTo(vec));
-     System.out.println("rotate inclined " + r_inc_j.applyTo(vec) + " around k-axis: " + result_inc);
+    System.out.println("incline " + vec + " around j-axis: " + r_inc_j.applyTo(vec));
+    System.out.println("rotate inclined " + r_inc_j.applyTo(vec) + " around k-axis: " + result_inc);
+
+    /*
+     * Rotating coordinate systems
+     */
+    vec = new Vector3D(1, 1, 0);
+    Rotation r = new Rotation(Vector3D.PLUS_K, Math.toRadians(90), RotationConvention.FRAME_TRANSFORM);
+    System.out.println(vec + " after rotation : " + r.applyTo(vec));
+    double distance = Vector3D.distance(new Vector3D(1,-1,0), r.applyTo(vec));
+    assert distance < 1e-15 : "Distance = " + distance;
 
   }
 
