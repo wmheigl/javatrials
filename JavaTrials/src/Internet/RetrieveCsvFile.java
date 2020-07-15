@@ -32,7 +32,9 @@ public class RetrieveCsvFile {
 
     URL url = new URL(MNIST_TEST);
 
-    // using Java IO
+    /*
+     *  Java IO: read into a string
+     */
     String line;
     try (InputStream in = url.openStream()) {
       BufferedReader reader = new BufferedReader(new InputStreamReader(in));
@@ -40,10 +42,11 @@ public class RetrieveCsvFile {
       System.out.println(line);
     }
     
-    // using Java NIO, copies bytewise into a file
+    /*
+     * Java NIO: copies byte-wise into a file
+     */
     try (ReadableByteChannel readChannel = Channels.newChannel(new URL(MNIST_TEST).openStream())) {      
-      File tmpfile = File.createTempFile("temp", null);
-      System.out.println("temp file: " + tmpfile.toString());
+      File tmpfile = File.createTempFile("temp", null); // created in /tmp
       FileOutputStream fileOS = new FileOutputStream(tmpfile);
       FileChannel writeChannel = fileOS.getChannel();
       writeChannel.transferFrom(readChannel, 0, Long.MAX_VALUE);
