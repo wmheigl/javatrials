@@ -40,8 +40,6 @@ import ai.onnxruntime.OrtSession.SessionOptions.OptLevel;
  */
 public class ScoreMnistCsv {
 
-  private static final Logger LOG = Logger.getLogger(ScoreMNIST.class.getName());
-
   private static final String MODEL = "/home/werner/ML_Data/mlp_mnist_python_model_trained.onnx";
   private static final String DATA_SMALL = "/home/werner/ML_Data/mnist_csv/mnist_test_10.csv";
   private static final String DATA = "/home/werner/ML_Data/mnist_csv/mnist_test.csv";
@@ -61,12 +59,12 @@ public class ScoreMnistCsv {
 
       opts.setOptimizationLevel(OptLevel.BASIC_OPT);
 
-      LOG.info("Loading model from " + MODEL);
+      System.out.println("Loading model from " + MODEL);
 
       try (OrtSession session = env.createSession(MODEL, opts)) {
 
-	LOG.info("Inputs: " + session.getInputInfo().values());
-	LOG.info("Outputs: " + session.getOutputInfo().values());
+	System.out.println("Inputs: " + session.getInputInfo().values());
+	System.out.println("Outputs: " + session.getOutputInfo().values());
 
 	List<Pair<Integer, float[][]>> data = ScoreMnistCsv.loadCSV(DATA);
 
@@ -74,7 +72,7 @@ public class ScoreMnistCsv {
 	int[][] confusionMatrix = new int[10][10];
 
 	String inputName = session.getInputNames().iterator().next();
-	LOG.info("Input Name: " + inputName);
+	System.out.println("Input Name: " + inputName);
 
 	for (Pair<Integer, float[][]> datum : data) {
 
@@ -99,8 +97,9 @@ public class ScoreMnistCsv {
 	  }
 	}
 
-	LOG.info("Final accuracy = " + ((float) correctCount) / data.size());
+	System.out.println("Final accuracy = " + ((float) correctCount) / data.size());
 
+	// confusion matrix (vertical axis: actual category, horizontal axis: predicted category)
 	StringBuilder sb = new StringBuilder();
 	sb.append("Label");
 	for (int i = 0; i < confusionMatrix.length; i++) {
@@ -115,12 +114,13 @@ public class ScoreMnistCsv {
 	  }
 	  sb.append("\n");
 	}
-
+	System.out.println("Confusion Matrix");
+	System.out.println("-----------------");
 	System.out.println(sb.toString());
 
       }
 
-      LOG.info("Done!");
+      System.out.println("Done!");
 
     }
   }
@@ -160,16 +160,15 @@ public class ScoreMnistCsv {
 	String[] tokens = line.split(",");
 	Integer label = Integer.valueOf(tokens[0]);
 	String[] vals = Arrays.copyOfRange(tokens, 1, tokens.length);
-	// no need to divide by 255 for predictions
 	List<Float> valsList = Arrays.stream(vals).map(Float::valueOf).collect(Collectors.toList());
 	float[] values = ArrayUtils.toPrimitive(valsList.toArray(new Float[0]));
 	data.add(Pair.of(label, new float[][] { values })); // Tensors specified in ONNX model are 2D.
       }
     } catch (Exception e) {
-      LOG.info(e.getMessage());
+      System.out.println(e.getMessage());
     }
 
-    LOG.info("Loaded " + data.size() + " features & labels, from '" + dataPath + "'.");
+    System.out.println("Loaded " + data.size() + " features & labels, from '" + dataPath + "'.");
     return data;
   }
 }
