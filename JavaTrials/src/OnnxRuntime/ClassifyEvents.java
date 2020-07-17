@@ -65,7 +65,6 @@ public class ClassifyEvents {
 	// get number of output nodes and setup confusion matrix
 	List<NodeInfo> values = new ArrayList<NodeInfo>(session.getOutputInfo().values());
 	TensorInfo outputInfo = (TensorInfo) values.get(0).getInfo();
-	System.out.println("Output shape: " + Arrays.toString(outputInfo.getShape()));
 	int nout = (int) outputInfo.getShape()[1];
 	int[][] confusionMatrix = new int[nout][nout];
 	int correctCount = 0;
