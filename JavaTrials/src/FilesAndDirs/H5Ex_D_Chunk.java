@@ -31,7 +31,7 @@ import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;
 
 public class H5Ex_D_Chunk {
-    private static String FILENAME = "H5Ex_D_Chunk.h5";
+    private static String FILENAME = "/home/werner/H5Ex_D_Chunk.h5";
     private static String DATASETNAME = "DS1";
     private static final int DIM_X = 6;
     private static final int DIM_Y = 8;
