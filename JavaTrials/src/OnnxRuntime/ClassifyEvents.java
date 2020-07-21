@@ -90,9 +90,11 @@ public class ClassifyEvents {
 	String inputName = session.getInputNames().iterator().next();
 	System.out.println("Input Name: " + inputName);
 
-	try (OnnxTensor test = OnnxTensor.createTensor(env, new float[][][][] { datum });
-	    Result output = session.run(Collections.singletonMap(inputName, test))) {
+	try (OnnxTensor test = OnnxTensor.createTensor(env, new float[][][][] { datum })) {
 
+	  Result output = session.run(Collections.singletonMap(inputName, test));
+
+	  // 0: noise, 1: PS Event, 2: S-only
 	  float[][] scores = (float[][]) output.get(0).getValue();
 	  System.out.println("Scores: " + Arrays.toString(scores[0]));
 	}
