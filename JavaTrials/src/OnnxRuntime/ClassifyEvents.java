@@ -6,10 +6,15 @@
  */
 package OnnxRuntime;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import ai.onnxruntime.NodeInfo;
 import ai.onnxruntime.OnnxTensor;
@@ -42,18 +47,27 @@ public class ClassifyEvents {
    */
   public static void main(String[] args) throws OrtException {
 
-    final String filename = DATA_DIR + DATA_FILE;
+    String filename = DATA_DIR + DATA_FILE;
+    List<Path> fileList = null;
 
-  //@formatter:off
+    try {
+      fileList = Files.find(Paths.get(DATA_DIR), 1, (p, bfa) -> bfa.isRegularFile() && p.getFileName().toString().endsWith(".h5"))
+	  .collect(Collectors.toList());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    System.out.println("No. of files: " + fileList.size());
+
+//@formatter:off
     try (OrtEnvironment env = OrtEnvironment.getEnvironment();
 	OrtSession.SessionOptions opts = new SessionOptions()) {
 //@formatter:on
 
-      opts.setExecutionMode(ExecutionMode.PARALLEL);
-      opts.setIntraOpNumThreads(4);
+      // opts.setExecutionMode(ExecutionMode.PARALLEL);
+      // opts.setIntraOpNumThreads(4);
       opts.setOptimizationLevel(OptLevel.ALL_OPT);
       opts.setOptimizedModelFilePath(MODEL_OPT);
-//      opts.addCUDA(); / need to compile from source with CUDA support
+      // opts.addCUDA(); / need to compile from source with CUDA support
 
       System.out.println("Loading model from " + MODEL);
 
@@ -69,45 +83,54 @@ public class ClassifyEvents {
 	int dim2 = (int) dims[2];
 	int dim3 = (int) dims[3];
 
-	// load data frame and wrap in a rank-4 tensor
-	float[][] data_frame = ClassifyEvents.loadH5(filename);
+	for (Path path : fileList) {
 
-	// sub-sample to 250 samples
-	float[][] subSampled = new float[dim1][dim2];
-	for (int i = 0; i < subSampled.length; i++) {
-	  subSampled[i] = ArrayMath.copy((int) dims[2], 0, 3, data_frame[i]);
-	}
-	float[][][] datum = new float[dim1][dim2][dim3];
-	for (int i = 0; i < dim1; i++) {
-	  for (int j = 0; j < dim2; j++) {
-	    datum[i][j] = new float[] { subSampled[i][j] };
+	  /*
+	   *  load a data frame and shape it into a rank-4 tensor
+	   */
+	  
+	  float[][] dataFrame = ClassifyEvents.loadH5(path.toString());
+
+	  // sub-sample to 250 samples
+	  float[][] subSampled = new float[dim1][dim2];
+	  for (int i = 0; i < subSampled.length; i++) {
+	    subSampled[i] = ArrayMath.copy((int) dims[2], 0, 3, dataFrame[i]);
 	  }
-	}
+	  float[][][] datum = new float[dim1][dim2][dim3];
+	  for (int i = 0; i < dim1; i++) {
+	    for (int j = 0; j < dim2; j++) {
+	      datum[i][j] = new float[] { subSampled[i][j] };
+	    }
+	  }
 
-	System.out.println("Tensor.info: " + OnnxTensor.createTensor(env, datum).getInfo());
+	  System.out.println("Tensor.info: " + OnnxTensor.createTensor(env, datum).getInfo());
 
-	// get number of output nodes and setup confusion matrix
-	System.out.println("Outputs: " + session.getOutputInfo().values());
-	List<NodeInfo> outputValues = new ArrayList<NodeInfo>(session.getOutputInfo().values());
-	TensorInfo outputInfo = (TensorInfo) outputValues.get(0).getInfo();
-	int nout = (int) outputInfo.getShape()[1];
-	int[][] confusionMatrix = new int[nout][nout];
-	int correctCount = 0;
+	  // get number of output nodes and setup confusion matrix
+	  System.out.println("Outputs: " + session.getOutputInfo().values());
+	  List<NodeInfo> outputValues = new ArrayList<NodeInfo>(session.getOutputInfo().values());
+	  TensorInfo outputInfo = (TensorInfo) outputValues.get(0).getInfo();
+	  int nout = (int) outputInfo.getShape()[1];
+	  int[][] confusionMatrix = new int[nout][nout];
+	  int correctCount = 0;
 
-	String inputName = session.getInputNames().iterator().next();
-	System.out.println("Input Name: " + inputName);
+	  String inputName = session.getInputNames().iterator().next();
+	  System.out.println("Input Name: " + inputName);
 
-	try (OnnxTensor test = OnnxTensor.createTensor(env, new float[][][][] { datum })) {
+	  try (OnnxTensor test = OnnxTensor.createTensor(env, new float[][][][] { datum })) {
 
-	  Result output = session.run(Collections.singletonMap(inputName, test));
+	    Result output = session.run(Collections.singletonMap(inputName, test));
 
-	  // 0: noise, 1: PS Event, 2: S-only
-	  float[][] scores = (float[][]) output.get(0).getValue();
-	  System.out.println("Scores: " + Arrays.toString(scores[0]));
-	}
-      }
-    }
-
+	    // 0: noise, 1: PS Event, 2: S-only
+	    float[][] scores = (float[][]) output.get(0).getValue();
+	    System.out.println("Scores: " + Arrays.toString(scores[0]));
+	  }
+	  
+	} // end for-each (path)
+	
+      } // end try (session)
+      
+    } // end (env, opts)
+    
     System.out.println("Done!");
 
   }
