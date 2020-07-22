@@ -15,9 +15,11 @@ import ai.onnxruntime.NodeInfo;
 import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
+import ai.onnxruntime.OrtLoggingLevel;
 import ai.onnxruntime.OrtSession;
 import ai.onnxruntime.OrtSession.Result;
 import ai.onnxruntime.OrtSession.SessionOptions;
+import ai.onnxruntime.OrtSession.SessionOptions.ExecutionMode;
 import ai.onnxruntime.OrtSession.SessionOptions.OptLevel;
 import ai.onnxruntime.TensorInfo;
 import edu.mines.jtk.util.ArrayMath;
@@ -30,6 +32,7 @@ import hdf.hdf5lib.*;
 public class ClassifyEvents {
 
   private static final String MODEL = "/home/werner/ML_Data/CNN_Model_67.onnx";
+  private static final String MODEL_OPT = "/home/werner/optimModel.onnx";
   private static final String DATA_DIR = "/meg2/ben/promax_data_home/MachineLearning_Synth_Field/PSEvents_2mil_750x500/";
   private static final String DATA_FILE = "FFID-000001_AMP-1.0000_CON-0.0_X-3142050.0_Y-1331668.8_ELEV--2368.1_T-1591734621255_CLASS-0.h5";
 
@@ -46,7 +49,11 @@ public class ClassifyEvents {
 	OrtSession.SessionOptions opts = new SessionOptions()) {
 //@formatter:on
 
-      opts.setOptimizationLevel(OptLevel.BASIC_OPT);
+      opts.setExecutionMode(ExecutionMode.PARALLEL);
+      opts.setIntraOpNumThreads(4);
+      opts.setOptimizationLevel(OptLevel.ALL_OPT);
+      opts.setOptimizedModelFilePath(MODEL_OPT);
+//      opts.addCUDA(); / need to compile from source with CUDA support
 
       System.out.println("Loading model from " + MODEL);
 
