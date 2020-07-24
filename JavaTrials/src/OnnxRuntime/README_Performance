@@ -1,0 +1,72 @@
+README_Performance_OnnxRuntime
+-------------------------------
+
+Various predictions were run on all H5 files in the directory
+/meg2/ben/promax_data_home/MachineLearning_Synth_Field/PSEvent_2mil_750x500/"
+
+
+Run #1:  observed that all cores were used, opts.setOptimizationLevel(OptLevel.ALL_OPT)
+
+Final accuracy = 0.9992794
+Confusion Matrix
+-----------------
+Label    0     1    2
+    0    0     0    0
+    1    1 45759   32
+    2    0     0    0
+
+Elapsed ([hh]:mm:ss) =  1:40:35  @  809% of CPU time
+(35+40*60+3600)/(45759+1+32) = 0.132 seconds per file
+
+Run #2:  opts.setExecutionMode(ExecutionMode.PARALLEL), opts.setOptimizationLevel(OptLevel.ALL_OPT)
+
+Final accuracy = 0.9992794
+Confusion Matrix
+-----------------
+Label     0     1     2
+    0     0     0     0
+    1     1 45759    32
+    2     0     0     0
+
+Elapsed ([hh]:mm:ss) =  1:24:44  @  929% of CPU time
+(44+24*60+3600)/(45759+1+32) = 0.111 seconds per file
+
+Run #3:  opts.setExecutionMode(ExecutionMode.PARALLEL), opts.setOptimizationLevel(OptLevel.ALL_OPT), opts.setIntraOpNumThreads(4)
+
+Final accuracy = 0.9992794
+Confusion Matrix
+-----------------
+Label     0     1     2
+    0     0     0     0
+    1     1 45759    32
+    2     0     0     0
+
+Elapsed ([hh]:mm:ss) =  1:25:55  @  934% of CPU time
+(55+25*60+3600)/(45759+1+32) = 0.112 seconds per file
+
+Run #4:  opts.setExecutionMode(ExecutionMode.PARALLEL), opts.setOptimizationLevel(OptLevel.ALL_OPT), opts.setInterOpNumThreads(4)
+
+Final accuracy = 0.9992794
+Confusion Matrix
+-----------------
+Label     0     1     2
+    0     0     0     0
+    1     1 45759    32
+    2     0     0     0
+
+Elapsed ([hh]:mm:ss) =  1:25:21  @  533% of CPU time
+(21+25*60+3600)/(45759+1+32) = 0.112 seconds per file
+
+Run #5:       opts.setExecutionMode(ExecutionMode.PARALLEL), opts.setOptimizationLevel(OptLevel.EXTENDED_OPT)
+
+Final accuracy = 0.9992794
+Confusion Matrix
+-----------------
+Label     0     1     2
+    0     0     0     0
+    1     1 45759    32
+    2     0     0     0
+
+Elapsed ([hh]:mm:ss) =  1:23:59  @  919% of CPU time
+(59+23*60+3600)/(45759+1+32) = 0.110 seconds per file
+
