@@ -2,7 +2,7 @@
  * ScoreMnistCsv.java
  *
  * @author Werner M. Heigl
- * @version 2020.07.14
+ * @version 2020.07.28
  */
 package OnnxRuntime;
 
@@ -12,12 +12,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -29,6 +25,7 @@ import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
 import ai.onnxruntime.OrtSession.Result;
 import ai.onnxruntime.OrtSession.SessionOptions;
+import ai.onnxruntime.OrtSession.SessionOptions.ExecutionMode;
 import ai.onnxruntime.OrtSession.SessionOptions.OptLevel;
 
 /**
@@ -41,7 +38,7 @@ import ai.onnxruntime.OrtSession.SessionOptions.OptLevel;
 public class ScoreMnistCsv {
 
   private static final String MODEL = "/home/werner/ML_Data/mlp_mnist_python_model_trained.onnx";
-  private static final String DATA_SMALL = "/home/werner/ML_Data/mnist_csv/mnist_test_10.csv";
+//  private static final String DATA_SMALL = "/home/werner/ML_Data/mnist_csv/mnist_test_10.csv";
   private static final String DATA = "/home/werner/ML_Data/mnist_csv/mnist_test.csv";
 
   /**
@@ -57,7 +54,10 @@ public class ScoreMnistCsv {
 	OrtSession.SessionOptions opts = new SessionOptions()) {
 //@formatter:on
 
-      opts.setOptimizationLevel(OptLevel.BASIC_OPT);
+      opts.setExecutionMode(ExecutionMode.PARALLEL);
+      opts.setOptimizationLevel(OptLevel.ALL_OPT);
+      // opts.setExecutionMode(ExecutionMode.SEQUENTIAL);
+      // opts.setOptimizationLevel(OptLevel.BASIC_OPT);
 
       System.out.println("Loading model from " + MODEL);
 
@@ -80,11 +80,6 @@ public class ScoreMnistCsv {
 	      Result output = session.run(Collections.singletonMap(inputName, test))) {
 
 	    float[][] scores = (float[][]) output.get(0).getValue();
-
-	    /*
-	     * Conversion to probabilities, i.e. applying a softmax function to scores is not necessary to find the
-	     * index of the maximum.
-	     */
 
 	    int predLabel = ScoreMnistCsv.pred(scores[0]);
 
@@ -160,7 +155,7 @@ public class ScoreMnistCsv {
 	String[] tokens = line.split(",");
 	Integer label = Integer.valueOf(tokens[0]);
 	String[] vals = Arrays.copyOfRange(tokens, 1, tokens.length);
-	List<Float> valsList = Arrays.stream(vals).map(Float::valueOf).collect(Collectors.toList());
+	List<Float> valsList = Arrays.stream(vals).map(s -> Float.valueOf(s) / 255).collect(Collectors.toList());
 	float[] values = ArrayUtils.toPrimitive(valsList.toArray(new Float[0]));
 	data.add(Pair.of(label, new float[][] { values })); // Tensors specified in ONNX model are 2D.
       }
