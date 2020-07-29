@@ -2,11 +2,10 @@
  * ClassifyEvents.java
  *
  * @author Werner M. Heigl
- * @version 2020.07.20
+ * @version 2020.07.27
  */
 package OnnxRuntime;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,7 +20,6 @@ import ai.onnxruntime.NodeInfo;
 import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
-import ai.onnxruntime.OrtLoggingLevel;
 import ai.onnxruntime.OrtSession;
 import ai.onnxruntime.OrtSession.Result;
 import ai.onnxruntime.OrtSession.SessionOptions;
@@ -37,13 +35,12 @@ import hdf.hdf5lib.*;
  */
 public class ClassifyEvents {
 
-//  private static final String MODEL = "/home/werner/ML_Data/CNN_Model_67.onnx";
+  // private static final String MODEL = "/home/werner/ML_Data/CNN_Model_67.onnx";
   private static final String MODEL = "/home/werner/ML_Data/CNN_Model_188.onnx";
   private static final String MODEL_OPT = "/home/werner/optimModel.onnx";
-//  private static final String DATA_DIR = "/meg2/ben/promax_data_home/MachineLearning_Synth_Field/PSEvents_2mil_750x500/";
-//  private static final String DATA_DIR = "/meg2/ben/promax_data_home/MachineLearning_Synth_Field/Noise_2mil_750x500/";
-  private static final String DATA_DIR = "/meg2/ben/promax_data_home/MachineLearning_Synth_Field/Noise_2mil_750x500/";
-  private static final String DATA_FILE = "FFID-000001_AMP-1.0000_CON-0.0_X-3142050.0_Y-1331668.8_ELEV--2368.1_T-1591734621255_CLASS-0.h5";
+  private static final String DATA_DIR = "/meg2/ben/promax_data_home/MachineLearning_Synth_Field/PSEvents_2mil_750x500/";
+  // private static final String DATA_DIR =
+  // "/meg2/ben/promax_data_home/MachineLearning_Synth_Field/Noise_2mil_750x500/";
 
   /**
    * @param args A dummy argument.
@@ -51,12 +48,12 @@ public class ClassifyEvents {
    */
   public static void main(String[] args) throws OrtException {
 
-    String filename = DATA_DIR + DATA_FILE;
     List<Path> fileList = null;
 
     try {
+      long maxSize = 2;// Long.MAX_VALUE;
       fileList = Files.find(Paths.get(DATA_DIR), 1, (p, bfa) -> bfa.isRegularFile() && p.getFileName().toString().endsWith(".h5"))
-	  .collect(Collectors.toList());
+	  .limit(maxSize).collect(Collectors.toList());
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -67,8 +64,8 @@ public class ClassifyEvents {
 	OrtSession.SessionOptions opts = new SessionOptions()) {
 //@formatter:on
 
-      opts.setExecutionMode(ExecutionMode.PARALLEL);
-      opts.setOptimizationLevel(OptLevel.ALL_OPT);
+      opts.setExecutionMode(ExecutionMode.SEQUENTIAL);
+      opts.setOptimizationLevel(OptLevel.BASIC_OPT);
       opts.setOptimizedModelFilePath(MODEL_OPT);
       // opts.addCUDA(); / need to compile from source with CUDA support
 
@@ -97,16 +94,18 @@ public class ClassifyEvents {
 	/*
 	 * iterate over list of H5 files and keep track of scores
 	 */
+
 	ListIterator<Path> fileIterator = fileList.listIterator();
-	while(fileIterator.hasNext()) {
-//	for (Path path : fileList) {
+	while (fileIterator.hasNext()) {
 
 	  /*
-	   * load a data frame and shape it into a rank-4 tensor
+	   * load a data frame, pre-process and shape it into a rank-4 tensor
 	   */
 
-	  float[][] dataFrame = ClassifyEvents.loadH5(fileIterator.next().toString());
-//	  float[][] dataFrame = ClassifyEvents.loadH5(path.toString());
+	  String fileName = fileIterator.next().toString();
+	  // float[][] dataFrame = ClassifyEvents.loadH5(fileName);
+	  float[][] dataFrame = ClassifyEvents.preProcess(ClassifyEvents.loadH5(fileName));
+	  System.out.println("Min/Max: " + ArrayMath.min(dataFrame) + "/" + ArrayMath.max(dataFrame));
 
 	  // sub-sample to 250 samples
 	  float[][] subSampled = new float[dim1][dim2];
@@ -119,15 +118,19 @@ public class ClassifyEvents {
 	      datum[i][j] = new float[] { subSampled[i][j] };
 	    }
 	  }
+	  // System.out.println("Min/Max: " + ArrayMath.min(datum) + "/" + ArrayMath.max(datum));
 
-	  // System.out.println("Tensor.info: " + OnnxTensor.createTensor(env, datum).getInfo());
+	  System.out.println("Tensor.info: " + OnnxTensor.createTensor(env, datum).getInfo());
 
+	  /*
+	   * Run the prediction
+	   */
+	  
 	  String inputName = session.getInputNames().iterator().next();
 	  // System.out.println("Input Name: " + inputName);
 
-	  try (OnnxTensor test = OnnxTensor.createTensor(env, new float[][][][] { datum })) {
-
-	    Result output = session.run(Collections.singletonMap(inputName, test));
+	  try (OnnxTensor test = OnnxTensor.createTensor(env, new float[][][][] { datum });
+	      Result output = session.run(Collections.singletonMap(inputName, test))) {
 
 	    // 0: noise, 1: PS Event, 2: S-only
 	    float[][] scores = (float[][]) output.get(0).getValue();
@@ -135,15 +138,16 @@ public class ClassifyEvents {
 
 	    int predLabel = ClassifyEvents.pred(scores[0]);
 
-	    if (predLabel == 0) {
+	    if (predLabel == 1) {
 	      correctCount++;
 	    }
 
-	    confusionMatrix[0][predLabel]++;
+	    confusionMatrix[1][predLabel]++;
 
 	    if (fileIterator.previousIndex() % 200 == 0) {
-	      System.out.println("Progress: " + fileIterator.nextIndex() + " files");
+	      System.out.println("File: " + fileName);
 	      System.out.println("Scores: " + Arrays.toString(scores[0]));
+	      System.out.println("Progress: " + fileIterator.previousIndex() + " files");
 	    }
 
 	  }
@@ -178,6 +182,68 @@ public class ClassifyEvents {
 
     System.out.println("Done!");
 
+  }
+
+  /**
+   * Transforms the input {@code array} along the fast dimension by converting elements to z-scores and re-scale their
+   * absolute values to the interval [0,1].
+   * 
+   * @param array The input array.
+   * @return the pre-processed input array
+   */
+  private static float[][] preProcess(float[][] array) {
+
+    float[][] ppArray = array.clone();
+    for (int i = 0; i < array.length; i++) {
+      // get means and std. deviations
+      float mean = ClassifyEvents.getMean(array[i]);
+      float stdev = ArrayMath.sqrt(ClassifyEvents.getVariance(array[i], mean));
+      ppArray[i] = ArrayMath.sub(array[i], mean);
+      ppArray[i] = ArrayMath.div(ppArray[i], stdev);
+      ppArray[i] = ArrayMath.abs(ppArray[i]);
+      ppArray[i] = ClassifyEvents.rescale(ppArray[i], 0.01f, 0.99f);
+    }
+    return ppArray;
+  }
+
+  /**
+   * Re-scales array values to the interval [lower, upper].
+   * 
+   * @param array The input {@code array}.
+   * @param lower The lower limit of the interval.
+   * @param upper The upper limit of the interval.
+   * @return the rescaled array
+   */
+  private static float[] rescale(float[] array, float lower, float upper) {
+    float[] scaledArray = array.clone();
+    float min = ArrayMath.min(array);
+    float max = ArrayMath.max(array);
+    scaledArray = ArrayMath.sub(array, min);
+    scaledArray = ArrayMath.div(scaledArray, max - min);
+    scaledArray = ArrayMath.mul(scaledArray, upper - lower);
+    scaledArray = ArrayMath.add(scaledArray, lower);
+    return scaledArray;
+  }
+
+  /**
+   * @param fs The input array.
+   * @param mean The mean of the input array.
+   * @return the variance
+   */
+  private static float getVariance(float[] fs, float mean) {
+    float sum = 0;
+    for (float f : fs) {
+      sum += (f - mean) * (f - mean);
+    }
+    return sum / (fs.length - 1);
+  }
+
+  /**
+   * @param fs The input array.
+   * @return the arithmetic mean of the input array.
+   */
+  private static float getMean(float[] fs) {
+    return ArrayMath.sum(fs) / fs.length;
   }
 
   /**
@@ -220,12 +286,12 @@ public class ClassifyEvents {
       if (dataset_id >= 0) {
 	space_id = H5.H5Dget_space(dataset_id);
 	int ndims = H5.H5Sget_simple_extent_ndims(space_id);
-//	System.out.println("No. of dimensions: " + ndims);
+	// System.out.println("No. of dimensions: " + ndims);
 	long[] dims = new long[ndims];
 	long[] maxdims = new long[ndims];
 	H5.H5Sget_simple_extent_dims(space_id, dims, maxdims);
-//	System.out.println("Dimensions: " + Arrays.toString(dims));
-//	System.out.println("Max. Dimensions: " + Arrays.toString(maxdims));
+	// System.out.println("Dimensions: " + Arrays.toString(dims));
+	// System.out.println("Max. Dimensions: " + Arrays.toString(maxdims));
 	dset_data = new float[(int) dims[0]][(int) dims[1]];
       }
 
@@ -234,7 +300,7 @@ public class ClassifyEvents {
 	attr_id = H5.H5Aopen_by_name(dataset_id, ".", "ActualTracesInFrame", HDF5Constants.H5P_DEFAULT, HDF5Constants.H5P_DEFAULT);
 	long[] ntraces = new long[1];
 	H5.H5Aread(attr_id, HDF5Constants.H5T_NATIVE_LONG, ntraces);
-//	System.out.println("Traces in file: " + ntraces[0]);
+	// System.out.println("Traces in file: " + ntraces[0]);
 	if (attr_id >= 0) {
 	  H5.H5Aclose(attr_id);
 	}
